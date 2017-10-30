@@ -19,11 +19,9 @@ object SentenceParser {
         val verbs = words.takeLastWhile { it.kind is Verb }
         if (adjectives.size + verbs.size + 1 != words.size)
             return null
-        val noun = words[adjectives.size].let {
-            if (it.kind !is Noun)
-                return null
-            it
-        }
+        val noun = words[adjectives.size]
+        if (noun.kind !is Noun)
+            return null
 
         return Collocation(adjectives, noun, verbs)
     }
