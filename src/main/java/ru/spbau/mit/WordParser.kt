@@ -1,27 +1,21 @@
 package ru.spbau.mit
 
 object WordParser {
-    private val wordRegex = Regex("[a-zA-Z]*")
+    private val WORD_REGEX = Regex("[a-zA-Z]*")
 
     private fun lookupGenus(word: String, map: Map<String, WordGenus>) = map
-            .mapNotNull { (suffix, genus) -> if (word.endsWith(suffix)) genus else null }
+            .mapNotNull { (suffix, genus) -> genus.takeIf { word.endsWith(suffix) } }
             .singleOrNull()
 
-    private fun <T, R> T?.map(block: (T) -> R): R? {
-        if (this == null)
-            return null
-        return block(this)
-    }
-
     fun parse(word: String): Word? {
-        if (!word.matches(wordRegex))
+        if (!word.matches(WORD_REGEX))
             return null
 
-        val nounGenus = lookupGenus(word, Noun.SUFFIXES).map { Noun(it) }
-        val verbGenus = lookupGenus(word, Verb.SUFFIXES).map { Verb(it) }
-        val adjGenus = lookupGenus(word, Adjective.SUFFIXES).map { Adjective(it) }
+        val nounGenus = lookupGenus(word, Noun.SUFFIXES)?.let { Noun(it) }
+        val verbGenus = lookupGenus(word, Verb.SUFFIXES)?.let { Verb(it) }
+        val adjGenus = lookupGenus(word, Adjective.SUFFIXES)?.let { Adjective(it) }
 
-        val kind = listOf(nounGenus, verbGenus, adjGenus).singleOrNull { it != null } ?: return null
+        val kind = listOfNotNull(nounGenus, verbGenus, adjGenus).singleOrNull() ?: return null
         return Word(word, kind)
     }
 }
