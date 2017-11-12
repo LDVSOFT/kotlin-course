@@ -4,14 +4,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 
 internal class EvalTest {
-    private val evalLog = mutableListOf<Int>()
-
-    private val baseScope = rootScopeOf(funcs = mapOf(
-            "log" to { args: List<Int> ->
-                evalLog.add(args[0])
-                args[0]
-            })
-    )
+    val testScope = TestScope()
 
     @Test
     fun arithmeticOperatorsTest() {
@@ -70,14 +63,14 @@ internal class EvalTest {
     @Test
     fun evaluationOrderTest() {
         Operator.values().forEach { op ->
-            evalLog.clear()
+            testScope.reset()
             val expr = BinaryExpression(
-                    FunctionCall("log", 1.l),
-                    FunctionCall("log", 2.l),
+                    FunctionCall("println", 1.l),
+                    FunctionCall("println", 2.l),
                     op
             )
-            expr.eval(baseScope)
-            assertEquals(listOf(1, 2), evalLog)
+            expr.eval(testScope.scope)
+            assertEquals("1\n2\n", testScope.log)
         }
     }
 
@@ -90,27 +83,27 @@ internal class EvalTest {
                         AssignmentStatement("x", BinaryExpression("x".v, "n".v, Operator.MUL)),
                         AssignmentStatement("n", BinaryExpression("n".v, 1.l, Operator.ADD))
                 )),
-                ExpressionStatement(FunctionCall("log", "x".v))
+                ExpressionStatement(FunctionCall("println", "x".v))
         ))
-        program.eval(baseScope)
-        assertEquals(listOf(120), evalLog)
+        program.eval(testScope.scope)
+        assertEquals("120\n", testScope.log)
     }
 
     @Test
     fun loopFactorialTest() {
-        loopFactorialProgram.eval(baseScope)
-        assertEquals(listOf(1, 2, 6, 24, 120), evalLog)
+        loopFactorialProgram.eval(testScope.scope)
+        assertEquals("1\n2\n6\n24\n120\n", testScope.log)
     }
 
     @Test
     fun recursionFactorialTest() {
-        recursiveFactorialProgram.eval(baseScope)
-        assertEquals(listOf(1, 2, 6, 24, 120), evalLog)
+        recursiveFactorialProgram.eval(testScope.scope)
+        assertEquals("1\n2\n6\n24\n120\n", testScope.log)
     }
 
     @Test
     fun scopeSumTest() {
-        scopeSumProgram.eval(baseScope)
-        assertEquals(listOf(-994, 6), evalLog)
+        scopeSumProgram.eval(testScope.scope)
+        assertEquals("-994\n6\n", testScope.log)
     }
 }

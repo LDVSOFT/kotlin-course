@@ -12,7 +12,7 @@ val loopFactorialProgram = Program(Block(
         )),
         VariableDefinition("i", 1.l),
         WhileStatement(BinaryExpression("i".v, 5.l, Operator.LEQ), Block(
-                ExpressionStatement(FunctionCall("log",
+                ExpressionStatement(FunctionCall("println",
                         FunctionCall("factorial", "i".v)
                 )),
                 AssignmentStatement("i", BinaryExpression("i".v, 1.l, Operator.ADD))
@@ -30,7 +30,7 @@ val recursiveFactorialProgram = Program(Block(
         )),
         VariableDefinition("i", 1.l),
         WhileStatement(BinaryExpression("i".v, 5.l, Operator.LEQ), Block(
-                ExpressionStatement(FunctionCall("log",
+                ExpressionStatement(FunctionCall("println",
                         FunctionCall("factorial", "i".v)
                 )),
                 AssignmentStatement("i", BinaryExpression("i".v, 1.l, Operator.ADD))
@@ -44,7 +44,7 @@ val scopeSumProgram = Program(Block(
                 VariableDefinition("n", 4.l),
                 AssignmentStatement("m", 5.l)
         ), Block(
-                ExpressionStatement(FunctionCall("log", 999.l)),
+                ExpressionStatement(FunctionCall("println", 999.l)),
                 AssignmentStatement("m", 11111.l)
         )),
         WhileStatement(BinaryExpression("m".v, 6.l, Operator.LET), Block(
@@ -53,6 +53,20 @@ val scopeSumProgram = Program(Block(
                 VariableDefinition("m", 1000.l),
                 AssignmentStatement("n", BinaryExpression("n".v, "m".v, Operator.SUB))
         )),
-        ExpressionStatement(FunctionCall("log", "n".v)),
-        ExpressionStatement(FunctionCall("log", "m".v))
+        ExpressionStatement(FunctionCall("println", "n".v)),
+        ExpressionStatement(FunctionCall("println", "m".v))
 ))
+
+class TestScope {
+    private val buffer = StringBuffer()
+
+    val scope: Scope = rootScopeOf(funcs = mapOf(
+            "println" to { args -> buffer.appendln(args.joinToString()); args.size }
+    ))
+
+    val log get() = buffer.toString()
+
+    fun reset() {
+        buffer.setLength(0)
+    }
+}

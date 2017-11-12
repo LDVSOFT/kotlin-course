@@ -1,10 +1,13 @@
 package ru.spbau.mit
 
-import org.antlr.v4.runtime.BufferedTokenStream
-import org.antlr.v4.runtime.CharStreams
+import java.nio.file.Paths
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
-    val lexer = LanguageLexer(CharStreams.fromString("var x = 12 + foo(bar())"))
-    val parsedFile = LanguageParser(BufferedTokenStream(lexer)).file()
-    println(translate(parsedFile))
+    if (args.size != 1) {
+        System.err.println("Wrong number of arguments")
+        exitProcess(1)
+    }
+
+    parse(Paths.get(args[0])).eval()
 }
