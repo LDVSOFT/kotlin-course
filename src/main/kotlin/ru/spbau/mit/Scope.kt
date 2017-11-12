@@ -14,11 +14,11 @@ class Scope(
         = variables.get(name) ?: parentScope?.lookupAndGetVariable(name)
 
     fun lookupAndSetVariable(name: String, value: Int): Boolean {
-        if (parentScope?.lookupAndSetVariable(name, value) == true) {
-            return true
-        }
         if (name in variables) {
             variables[name] = value
+            return true
+        }
+        if (parentScope?.lookupAndSetVariable(name, value) == true) {
             return true
         }
         return false

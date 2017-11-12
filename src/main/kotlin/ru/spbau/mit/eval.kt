@@ -13,13 +13,13 @@ object Builtins {
 
 private val defaultScope = Scope(null, funcs = Builtins.MAP)
 
-fun Program.eval(): Int {
-    val visitor = EvalVisitor(defaultScope)
+fun Program.eval(baseScope: Scope = defaultScope): Int {
+    val visitor = EvalVisitor(baseScope)
     return visitor.visitBlock(block)
 }
 
-fun Expression.eval(): Int {
-    val visitor = EvalVisitor(defaultScope)
+fun Expression.eval(baseScope: Scope = defaultScope): Int {
+    val visitor = EvalVisitor(baseScope)
     return visit(visitor)
 }
 
@@ -43,7 +43,7 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
         with(functionCall) {
             val function = scope.lookupAndGetFunction(name)
                     ?: throw EvaluationException("Function $name not in scope")
-            val args = args.map { visit(this@EvalVisitor) }
+            val args = args.map { it.visit(this@EvalVisitor) }
             return function.invoke(args)
         }
     }
