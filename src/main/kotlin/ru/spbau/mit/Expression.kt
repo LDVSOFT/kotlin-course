@@ -1,7 +1,7 @@
 package ru.spbau.mit
 
 sealed class Expression {
-    interface Visitor<T> {
+    interface Visitor<out T> {
         fun visit(functionCall: FunctionCall): T
         fun visit(binary: BinaryExpression): T
         fun visit(literal: Literal): T

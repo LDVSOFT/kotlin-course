@@ -4,7 +4,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 
 internal class EvalTest {
-    val testScope = TestScope()
+    private val testScope = TestScope()
 
     @Test
     fun arithmeticOperatorsTest() {

@@ -4,7 +4,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 
 class IntegrationTest {
-    val testScope = TestScope()
+    private val testScope = TestScope()
 
     @Test
     fun loopFactorialTest() {

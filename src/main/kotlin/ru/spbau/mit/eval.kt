@@ -1,9 +1,9 @@
 package ru.spbau.mit
 
 object Builtins {
-    fun println(args: List<Int>): Int {
+    private fun println(args: List<Int>): Int {
         println(args.joinToString())
-        return 0
+        return args.size
     }
 
     val MAP = mapOf(

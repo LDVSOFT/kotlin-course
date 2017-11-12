@@ -29,7 +29,7 @@ class Scope(
     val returned get() = functionScope.returned != null
 
     fun lookupAndGetVariable(name: String): Int?
-        = variables.get(name) ?: parentScope?.lookupAndGetVariable(name)
+        = variables[name] ?: parentScope?.lookupAndGetVariable(name)
 
     fun lookupAndSetVariable(name: String, value: Int): Boolean {
         if (name in variables) {
@@ -50,7 +50,7 @@ class Scope(
     }
 
     fun lookupAndGetFunction(name: String): Function?
-        = functions.get(name) ?: parentScope?.lookupAndGetFunction(name)
+        = functions[name] ?: parentScope?.lookupAndGetFunction(name)
 
     fun addFunction(name: String, function: Function): Boolean {
         if (name in functions)

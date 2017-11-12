@@ -1,7 +1,7 @@
 package ru.spbau.mit
 
 sealed class Statement {
-    interface Visitor<T> {
+    interface Visitor<out T> {
         fun visit(function: FunctionDefinition): T
         fun visit(variable: VariableDefinition): T
         fun visit(expression: ExpressionStatement): T
