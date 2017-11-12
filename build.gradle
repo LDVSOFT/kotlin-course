@@ -31,8 +31,7 @@ dependencies {
 }
 
 generateGrammarSource {
-    arguments += ['-package', 'ru.spbau.mit', '-visitor', '-no-listener']
-    outputDirectory = new File("$buildDir/generated-src/antlr/main/ru/spbau/mit")
+    arguments += ['-visitor', '-no-listener']
 }
 
 compileKotlin {
