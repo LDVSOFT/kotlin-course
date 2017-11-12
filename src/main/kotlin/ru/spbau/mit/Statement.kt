@@ -24,7 +24,7 @@ data class FunctionDefinition(
 
 data class VariableDefinition(
         val name: String,
-        val init: Expression?
+        val init: Expression? = null
 ): Statement() {
     override fun <T> visit(visitor: Visitor<T>) = visitor.visit(this)
 }
@@ -46,7 +46,7 @@ data class WhileStatement(
 data class IfStatement(
         val condition: Expression,
         val thenBranch: Block,
-        val elseBranch: Block?
+        val elseBranch: Block? = null
 ): Statement() {
     override fun <T> visit(visitor: Visitor<T>) = visitor.visit(this)
 }

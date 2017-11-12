@@ -6,4 +6,6 @@ data class Program(
 
 data class Block(
         val body: List<Statement>
-)
+) {
+    constructor(vararg statements: Statement): this(statements.toList())
+}

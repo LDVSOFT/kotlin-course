@@ -15,6 +15,8 @@ data class FunctionCall(
         val name: String,
         val args: List<Expression>
 ): Expression() {
+    constructor(name: String, vararg args: Expression): this(name, args.toList())
+
     override fun <T> visit(visitor: Visitor<T>) = visitor.visit(this)
 }
 
