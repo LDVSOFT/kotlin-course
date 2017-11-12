@@ -11,7 +11,10 @@ object Builtins {
     )
 }
 
-private val defaultScope = Scope(null, funcs = Builtins.MAP)
+fun rootScopeOf(vars: Map<String, Int> = emptyMap(), funcs: Map<String, Function> = emptyMap()) =
+        Scope(null, FunctionScope(), vars, funcs)
+
+private val defaultScope = rootScopeOf(funcs = Builtins.MAP)
 
 fun Program.eval(baseScope: Scope = defaultScope): Int {
     val visitor = EvalVisitor(baseScope)
@@ -24,12 +27,20 @@ fun Expression.eval(baseScope: Scope = defaultScope): Int {
 }
 
 private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expression.Visitor<Int> {
-    private var returnValue = null as Int?
+    internal fun visitFunctionBlock(block: Block, vars: Map<String, Int> = emptyMap()): Int {
+        val newScope = Scope(scope, FunctionScope(), vars)
+        return EvalVisitor(newScope).visitBlock(block)
+    }
+
+    internal fun visitBlockScoped(block: Block, vars: Map<String, Int> = emptyMap()): Int {
+        val newScope = Scope(scope, vars)
+        return EvalVisitor(newScope).visitBlock(block)
+    }
 
     internal fun visitBlock(block: Block): Int {
         block.body.forEach {
             it.visit(this)
-            val returnedValue = returnValue
+            val returnedValue = scope.functionScope.returned
             if (returnedValue != null) {
                 return returnedValue
             }
@@ -37,7 +48,7 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
         return 0
     }
 
-    private fun Block.visit(): Int = visitBlock(this)
+    private fun Block.visitScoped(): Int = visitBlockScoped(this)
 
     override fun visit(functionCall: FunctionCall): Int {
         with(functionCall) {
@@ -81,7 +92,7 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
 
     override fun visit(variable: VariableDefinition) {
         if (!scope.addVariable(variable.name, variable.init?.visit(this))) {
-            throw EvaluationException("Variable duplicated in scope :${variable.name}")
+            throw EvaluationException("Variable duplicated in scope: ${variable.name}")
         }
     }
 
@@ -91,8 +102,8 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
 
     override fun visit(whileStatement: WhileStatement) {
         with(whileStatement) {
-            while (returnValue == null && condition.visit(this@EvalVisitor) != 0) {
-                body.visit()
+            while (!scope.returned && condition.visit(this@EvalVisitor) != 0) {
+                body.visitScoped()
             }
         }
     }
@@ -100,9 +111,9 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
     override fun visit(ifStatement: IfStatement) {
         with(ifStatement) {
             if (condition.visit(this@EvalVisitor) != 0) {
-                thenBranch.visit()
+                thenBranch.visitScoped()
             } else {
-                elseBranch?.visit()
+                elseBranch?.visitScoped()
             }
         }
     }
@@ -116,10 +127,10 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
     }
 
     override fun visit(returnStatement: ReturnStatement) {
-        if (returnValue != null) {
+        if (scope.returned) {
             throw EvaluationException("Double return")
         }
-        returnValue = returnStatement.expression.visit(this)
+        scope.functionScope.returnWith(returnStatement.expression.visit(this))
     }
 
     private inner class UserFunction(
@@ -129,8 +140,7 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
             if (args.size != function.args.size) {
                 throw EvaluationException("Cannot call function ${function.name}: requires ${function.args.size}")
             }
-            val newScope = Scope(scope, function.args.zip(args).toMap())
-            return EvalVisitor(newScope).visitBlock(function.body)
+            return visitFunctionBlock(function.body, function.args.zip(args).toMap())
         }
     }
 }

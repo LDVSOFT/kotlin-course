@@ -1,12 +1,23 @@
 package ru.spbau.mit
 
+import org.antlr.v4.runtime.BufferedTokenStream
+import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.Token
 import org.antlr.v4.runtime.tree.*
 import ru.spbau.mit.LanguageParser.*
+import java.nio.file.Path
 
 fun translate(program: FileContext): Program {
     return TranslateVisitor.visitFile(program)
+}
+
+fun parse(text: String): Program {
+    return translate(LanguageParser(BufferedTokenStream(LanguageLexer(CharStreams.fromString(text)))).file())
+}
+
+fun parse(path: Path): Program {
+    return translate(LanguageParser(BufferedTokenStream(LanguageLexer(CharStreams.fromPath(path)))).file())
 }
 
 private object TranslateVisitor: AbstractParseTreeVisitor<Any>(), LanguageVisitor<Any> {
@@ -98,6 +109,8 @@ private object TranslateVisitor: AbstractParseTreeVisitor<Any>(), LanguageVisito
     override fun visitExpression(ctx: ExpressionContext) = visitChildren(ctx) as Expression
 
     override fun visitBaseExpression(ctx: BaseExpressionContext) = visitChildren(ctx) as Expression
+
+    override fun visitBracedExpression(ctx: BracedExpressionContext) = visitExpression(ctx.braced)
 
     override fun visitOrExpression(ctx: OrExpressionContext) =
             visitOperatorExpression(ctx.sole, ctx.left, ctx.right, ctx.op)

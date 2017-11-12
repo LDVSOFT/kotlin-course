@@ -1,15 +1,12 @@
 package ru.spbau.mit
 
-import org.junit.Assert.*
 import org.junit.Test
+import kotlin.test.assertEquals
 
 internal class EvalTest {
-    private val Int.l get() = Literal(this)
-    private val String.v get() = Variable(this)
-
     private val evalLog = mutableListOf<Int>()
 
-    private val baseScope = Scope(null, funcs = mapOf(
+    private val baseScope = rootScopeOf(funcs = mapOf(
             "log" to { args: List<Int> ->
                 evalLog.add(args[0])
                 args[0]
@@ -100,49 +97,20 @@ internal class EvalTest {
     }
 
     @Test
-    fun customFunctionProgram() {
-        val program = Program(Block(
-                FunctionDefinition("factorial", listOf("n"), Block(
-                        VariableDefinition("x", 1.l),
-                        VariableDefinition("i", 1.l),
-                        WhileStatement(BinaryExpression("i".v, "n".v, Operator.LEQ), Block(
-                                AssignmentStatement("x", BinaryExpression("x".v, "i".v, Operator.MUL)),
-                                AssignmentStatement("i", BinaryExpression("i".v, 1.l, Operator.ADD))
-                        )),
-                        ReturnStatement("x".v)
-                )),
-                VariableDefinition("i", 1.l),
-                WhileStatement(BinaryExpression("i".v, 5.l, Operator.LEQ), Block(
-                        ExpressionStatement(FunctionCall("log",
-                                FunctionCall("factorial", "i".v)
-                        )),
-                        AssignmentStatement("i", BinaryExpression("i".v, 1.l, Operator.ADD))
-                ))
-        ))
-        program.eval(baseScope)
+    fun loopFactorialTest() {
+        loopFactorialProgram.eval(baseScope)
         assertEquals(listOf(1, 2, 6, 24, 120), evalLog)
     }
 
     @Test
-    fun recursionAndReturnTest() {
-        val program = Program(Block(
-                FunctionDefinition("factorial", listOf("n"), Block(
-                        IfStatement(BinaryExpression("n".v, 1.l, Operator.LEQ), Block(
-                                ReturnStatement(1.l)
-                        )),
-                        ReturnStatement(BinaryExpression("n".v, FunctionCall("factorial",
-                                BinaryExpression("n".v, 1.l, Operator.SUB)
-                        ), Operator.MUL))
-                )),
-                VariableDefinition("i", 1.l),
-                WhileStatement(BinaryExpression("i".v, 5.l, Operator.LEQ), Block(
-                        ExpressionStatement(FunctionCall("log",
-                                FunctionCall("factorial", "i".v)
-                        )),
-                        AssignmentStatement("i", BinaryExpression("i".v, 1.l, Operator.ADD))
-                ))
-        ))
-        program.eval(baseScope)
+    fun recursionFactorialTest() {
+        recursiveFactorialProgram.eval(baseScope)
         assertEquals(listOf(1, 2, 6, 24, 120), evalLog)
+    }
+
+    @Test
+    fun scopeSumTest() {
+        scopeSumProgram.eval(baseScope)
+        assertEquals(listOf(-994, 6), evalLog)
     }
 }

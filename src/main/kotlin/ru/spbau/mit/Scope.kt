@@ -2,13 +2,31 @@ package ru.spbau.mit
 
 typealias Function = (List<Int>) -> Int
 
+class FunctionScope {
+    var returned: Int? = null
+        private set
+
+    fun returnWith(value: Int = 0) {
+        returned = value
+    }
+}
+
 class Scope(
         private val parentScope: Scope?,
+        val functionScope: FunctionScope,
         vars: Map<String, Int> = emptyMap(),
         funcs: Map<String, Function> = emptyMap()
 ) {
     private val variables: MutableMap<String, Int> = vars.toMutableMap()
     private val functions: MutableMap<String, Function> = funcs.toMutableMap()
+
+    constructor(
+            parentScope: Scope,
+            vars: Map<String, Int> = emptyMap(),
+            funcs: Map<String, Function> = emptyMap()
+    ): this(parentScope, parentScope.functionScope, vars, funcs)
+
+    val returned get() = functionScope.returned != null
 
     fun lookupAndGetVariable(name: String): Int?
         = variables.get(name) ?: parentScope?.lookupAndGetVariable(name)

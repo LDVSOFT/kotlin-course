@@ -1,0 +1,18 @@
+var n = 0
+var m
+if (1) {
+    var n = 4 // Should not overwrite
+    m = 5     // Should
+} else {
+    log(999) // Unreachable
+    m = 11111
+}
+// Here, n = 0, m = 5
+while (m < 6) {
+    m = m + 1 // m = 6
+    n = n + m // n = 6
+    var m = 1000 // m = 1000
+    n = n - m // n = -994
+}
+log(n) // -994
+log(m) // 6

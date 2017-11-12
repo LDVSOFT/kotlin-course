@@ -6,6 +6,12 @@ grammar Language;
 
 // Basics
 
+COMMENT_START: '//';
+
+NEWLINE: ('\n' | '\r') -> skip;
+WS: (' ' | '\t') -> skip;
+COMMENT: COMMENT_START .*? (NEWLINE | EOF) -> skip;
+
 IF: 'if';
 ELSE: 'else';
 WHILE: 'while';
@@ -28,21 +34,19 @@ MUL: '*'
    | '/'
    | '%';
 
-NEWLINE: ('\n' | '\r') -> skip;
-WS: (' ' | '\t') -> skip;
-COMMENT: '//' .*? NEWLINE -> skip;
-
 identifier: IDENTIFIER;
 IDENTIFIER: (LETTER | UNDERSCORE) (LETTER | UNDERSCORE | DIGIT)*;
 
 literal: LITERAL;
-LITERAL: NON_ZERO_DIGIT DIGIT*;
+LITERAL: NON_ZERO_DIGIT DIGIT*
+       | ZERO_DIGIT;
 
 LETTER: 'a'..'z'
       | 'A'..'Z';
 
 NON_ZERO_DIGIT: '1'..'9';
-DIGIT: '0' | NON_ZERO_DIGIT;
+ZERO_DIGIT: '0';
+DIGIT: ZERO_DIGIT | NON_ZERO_DIGIT;
 
 UNDERSCORE: '_';
 COMMA: ',';
@@ -92,10 +96,12 @@ expressionStatement: e = expression;
 
 expression: orExpression;
 
-baseExpression: LPAREN braced = expression RPAREN
-          | functionCall
-          | variable
-          | literal;
+baseExpression: bracedExpression
+              | literal
+              | functionCall
+              | variable;
+
+bracedExpression: LPAREN braced = expression RPAREN;
 
 variable: name = identifier;
 
@@ -104,20 +110,20 @@ functionCall: name = identifier LPAREN args = arguments RPAREN;
 arguments: expression (COMMA expression)*
          | ;
 
-orExpression: left = andExpression op = OR right = orExpression
+orExpression: left = orExpression op = OR right = andExpression
             | sole = andExpression;
 
-andExpression: left = eqExpression op = AND right = andExpression
+andExpression: left = andExpression op = AND right = eqExpression
              | sole = eqExpression;
 
-eqExpression: left = cmpExpression op = EQ right = eqExpression
+eqExpression: left = eqExpression op = EQ right = cmpExpression
             | sole = cmpExpression;
 
-cmpExpression: left = addExpression op = CMP right = cmpExpression
+cmpExpression: left = cmpExpression op = CMP right = addExpression
              | sole = addExpression;
 
-addExpression: left = mulExpression op = ADD right = addExpression
+addExpression: left = addExpression op = ADD right = mulExpression
              | sole = mulExpression;
 
-mulExpression: left = baseExpression op = ADD right = mulExpression
+mulExpression: left = mulExpression op = MUL right = baseExpression
              | sole = baseExpression;
