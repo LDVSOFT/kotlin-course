@@ -22,7 +22,8 @@ open class Block: TexElement {
         renderChilder(to, indent + BLOCK_INDENT)
     }
 
-    fun <T: TexElement> addChild(element: T, init: T.() -> Unit = { /* do nothing */}) {
+    fun <T: TexElement> addChild(element: T, init: T.() -> Unit = {}): T {
         children.add(element.also(init))
+        return element
     }
 }
