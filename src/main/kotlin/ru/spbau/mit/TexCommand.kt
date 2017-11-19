@@ -13,6 +13,5 @@ open class TexCommand(
         if (options.isNotEmpty()) {
             to.append(options.joinToString(",", "[", "]"))
         }
-        to.append(' ')
     }
 }
