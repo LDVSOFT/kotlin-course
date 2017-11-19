@@ -2,7 +2,7 @@ group 'ru.spbau.mit'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.1.51'
+    ext.kotlin_version = '1.1.60'
 
     repositories {
         mavenCentral()
@@ -19,12 +19,13 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile group: "org.jetbrains.kotlin", name: "kotlin-stdlib-jre8", version: "$kotlin_version"
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    testCompile group: "org.jetbrains.kotlin", name: "kotlin-test-junit", version: "$kotlin_version"
 }
 
 compileKotlin {
