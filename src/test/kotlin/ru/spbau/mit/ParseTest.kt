@@ -45,4 +45,14 @@ internal class ParseTest {
         val source = javaClass.getResource("/scopeSum.lang").readText()
         assertEquals(scopeSumProgram, parse(source))
     }
+
+    @Test(expected = ParsingException::class)
+    fun parserError() {
+        parse("println(10+)")
+    }
+
+    @Test(expected = ParsingException::class)
+    fun lexerError() {
+        parse("println(10+~~)")
+    }
 }

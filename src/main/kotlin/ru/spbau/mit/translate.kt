@@ -1,9 +1,7 @@
 package ru.spbau.mit
 
-import org.antlr.v4.runtime.BufferedTokenStream
-import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.ParserRuleContext
-import org.antlr.v4.runtime.Token
+import org.antlr.v4.runtime.*
+import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.antlr.v4.runtime.tree.*
 import ru.spbau.mit.LanguageParser.*
 import java.nio.file.Path
@@ -12,12 +10,28 @@ fun translate(program: FileContext): Program {
     return TranslateVisitor.visitFile(program)
 }
 
+private fun tryParse(stream: CharStream): FileContext {
+    try {
+        val lexer = LanguageLexer(stream).apply {
+            removeErrorListeners()
+            addErrorListener(ThrowingErrorHandler)
+        }
+        val parser = LanguageParser(BufferedTokenStream(lexer)).apply {
+            removeErrorListeners()
+            addErrorListener(ThrowingErrorHandler)
+        }
+        return parser.file()
+    } catch (e: ParseCancellationException) {
+        throw ParsingException("Failed to parse the program", e)
+    }
+}
+
 fun parse(text: String): Program {
-    return translate(LanguageParser(BufferedTokenStream(LanguageLexer(CharStreams.fromString(text)))).file())
+    return translate(tryParse(CharStreams.fromString(text)))
 }
 
 fun parse(path: Path): Program {
-    return translate(LanguageParser(BufferedTokenStream(LanguageLexer(CharStreams.fromPath(path)))).file())
+    return translate(tryParse(CharStreams.fromPath(path)))
 }
 
 private object TranslateVisitor: AbstractParseTreeVisitor<Any>(), LanguageVisitor<Any> {
@@ -142,4 +156,12 @@ private object TranslateVisitor: AbstractParseTreeVisitor<Any>(), LanguageVisito
     )
 
     override fun visitArguments(ctx: ArgumentsContext) = ctx.expression().map { visitExpression(it) }
+}
+
+class ParsingException(message: String, cause: Throwable? = null): Exception(message, cause)
+
+object ThrowingErrorHandler : BaseErrorListener() {
+    override fun syntaxError(recognizer: Recognizer<*, *>?, offendingSymbol: Any?, line: Int, charPositionInLine: Int, msg: String?, e: RecognitionException?) {
+        throw ParseCancellationException("Line $line, char $charPositionInLine: $msg")
+    }
 }
