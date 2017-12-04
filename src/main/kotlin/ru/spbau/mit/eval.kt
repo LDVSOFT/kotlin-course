@@ -26,7 +26,18 @@ fun Expression.eval(baseScope: Scope = defaultScope): Int {
     return visit(visitor)
 }
 
-private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expression.Visitor<Int> {
+private inline fun <T> T?.mustBeNonNull(errorMessage: () -> String): T
+        = this ?: throw EvaluationException(errorMessage())
+
+private inline fun Boolean.mustBeTrue(errorMessage: () -> String) {
+    if (!this) throw EvaluationException(errorMessage())
+}
+
+private inline fun mustBeFalse(value: Boolean, errorMessage: () -> String) {
+    if (value) throw EvaluationException(errorMessage())
+}
+
+private class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expression.Visitor<Int> {
     internal fun visitFunctionBlock(block: Block, vars: Map<String, Int> = emptyMap()): Int {
         val newScope = Scope(scope, FunctionScope(), vars)
         return EvalVisitor(newScope).visitBlock(block)
@@ -38,8 +49,8 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
     }
 
     internal fun visitBlock(block: Block): Int {
-        block.body.forEach {
-            it.visit(this)
+        for (statement in block.body) {
+            statement.visit(this)
             val returnedValue = scope.functionScope.returned
             if (returnedValue != null) {
                 return returnedValue
@@ -51,12 +62,10 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
     private fun Block.visitScoped(): Int = visitBlockScoped(this)
 
     override fun visit(functionCall: FunctionCall): Int {
-        with(functionCall) {
-            val function = scope.lookupAndGetFunction(name)
-                    ?: throw EvaluationException("Function $name not in scope")
-            val args = args.map { it.visit(this@EvalVisitor) }
-            return function.invoke(args)
-        }
+        val function = scope.lookupAndGetFunction(functionCall.name)
+                .mustBeNonNull { "Function ${functionCall.name} not in scope" }
+        val args = functionCall.args.map { it.visit(this) }
+        return function.invoke(args)
     }
 
     override fun visit(binary: BinaryExpression): Int {
@@ -81,19 +90,17 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
 
     override fun visit(literal: Literal): Int = literal.value
 
-    override fun visit(variable: Variable): Int = scope.lookupAndGetVariable(variable.name)
-            ?: throw EvaluationException("Variable ${variable.name} not in scope")
+    override fun visit(variable: Variable): Int
+            = scope.lookupAndGetVariable(variable.name).mustBeNonNull { "Variable ${variable.name} not in scope" }
 
     override fun visit(function: FunctionDefinition) {
-        if (!scope.addFunction(function.name, UserFunction(function))) {
-            throw EvaluationException("Function duplicated in scope: ${function.name}")
-        }
+        scope.addFunction(function.name, UserFunction(function))
+                .mustBeTrue { "Function duplicated in scope: ${function.name}" }
     }
 
     override fun visit(variable: VariableDefinition) {
-        if (!scope.addVariable(variable.name, variable.init?.visit(this))) {
-            throw EvaluationException("Variable duplicated in scope: ${variable.name}")
-        }
+        scope.addVariable(variable.name, variable.init?.visit(this))
+                .mustBeTrue { "Variable duplicated in scope: ${variable.name}" }
     }
 
     override fun visit(expression: ExpressionStatement) {
@@ -101,35 +108,26 @@ private data class EvalVisitor(val scope: Scope): Statement.Visitor<Unit>, Expre
     }
 
     override fun visit(whileStatement: WhileStatement) {
-        with(whileStatement) {
-            while (!scope.returned && condition.visit(this@EvalVisitor) != 0) {
-                body.visitScoped()
-            }
+        while (!scope.returned && whileStatement.condition.visit(this) != 0) {
+            whileStatement.body.visitScoped()
         }
     }
 
     override fun visit(ifStatement: IfStatement) {
-        with(ifStatement) {
-            if (condition.visit(this@EvalVisitor) != 0) {
-                thenBranch.visitScoped()
-            } else {
-                elseBranch?.visitScoped()
-            }
+        if (ifStatement.condition.visit(this) != 0) {
+            ifStatement.thenBranch.visitScoped()
+        } else {
+            ifStatement.elseBranch?.visitScoped()
         }
     }
 
     override fun visit(assignment: AssignmentStatement) {
-        with(assignment) {
-            if (!scope.lookupAndSetVariable(name, expression.visit(this@EvalVisitor))) {
-                throw EvaluationException("Variable $name not in scope")
-            }
-        }
+        scope.lookupAndSetVariable(assignment.name, assignment.expression.visit(this))
+                .mustBeTrue { "Variable ${assignment.name} not in scope" }
     }
 
     override fun visit(returnStatement: ReturnStatement) {
-        if (scope.returned) {
-            throw EvaluationException("Double return")
-        }
+        mustBeFalse(scope.returned) { "Double return" }
         scope.functionScope.returnWith(returnStatement.expression.visit(this))
     }
 
